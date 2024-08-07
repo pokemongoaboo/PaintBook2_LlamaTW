@@ -118,6 +118,7 @@ def generate_image(image_prompt, style_base):
     )
     return response.data[0].url
 
+
 # 主要生成流程
 if st.button("生成繪本"):
     with st.spinner("正在生成故事..."):
@@ -133,15 +134,42 @@ if st.button("生成繪本"):
         st.write("風格基礎：", style_base)
 
     try:
+        # 嘗試移除可能的前導和尾隨空白字符
+        paged_story = paged_story.strip()
+        
+        # 檢查是否以 [ 開始和 ] 結束
+        if not (paged_story.startswith('[') and paged_story.endswith(']')):
+            st.warning("JSON 格式可能不正確。正在嘗試修復...")
+            paged_story = '[' + paged_story + ']'
+        
         pages = json.loads(paged_story)
-    except json.JSONDecodeError:
-        st.error("無法解析分頁故事。請重試。")
+        
+        if not isinstance(pages, list):
+            raise ValueError("解析後的結果不是列表")
+        
+        st.success(f"成功解析 JSON。共有 {len(pages)} 頁。")
+    except json.JSONDecodeError as e:
+        st.error(f"JSON 解析錯誤：{str(e)}")
+        st.text("原始 JSON 字符串：")
+        st.code(paged_story)
+        st.stop()
+    except ValueError as e:
+        st.error(f"值錯誤：{str(e)}")
+        st.text("解析後的數據：")
+        st.write(pages)
+        st.stop()
+    except Exception as e:
+        st.error(f"發生未知錯誤：{str(e)}")
         st.stop()
 
     for i, page in enumerate(pages, 1):
         st.write(f"第 {i} 頁")
-        st.write("文字：", page['text'])
+        st.write("文字：", page.get('text', '無文字'))
         with st.spinner(f"正在生成第 {i} 頁的圖片..."):
-            image_url = generate_image(page['image_prompt'], style_base)
-            st.image(image_url, caption=f"第 {i} 頁的插圖")
+            image_prompt = page.get('image_prompt', '')
+            if image_prompt:
+                image_url = generate_image(image_prompt, style_base)
+                st.image(image_url, caption=f"第 {i} 頁的插圖")
+            else:
+                st.warning(f"第 {i} 頁沒有圖像提示")
         time.sleep(5)  # 添加延遲以避免API限制
