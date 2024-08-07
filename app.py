@@ -2,6 +2,8 @@ import streamlit as st
 from openai import OpenAI
 import time
 import random
+import json
+import ast
 
 # 設置OpenAI客戶端
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -70,6 +72,12 @@ def generate_paged_story(story, page_count, character, theme, plot_point):
     將以下故事大綱細分至預計{page_count}個跨頁的篇幅，每頁需要包括(text，image_prompt)，
     {page_count-3}(倒數第三頁)才可以出現{plot_point}，
     在這之前應該要讓{character}的{theme}世界發展故事更多元化。
+    請以JSON格式回覆，格式如下：
+    [
+        {{"text": "第一頁的文字", "image_prompt": "第一頁的圖像提示"}},
+        {{"text": "第二頁的文字", "image_prompt": "第二頁的圖像提示"}},
+        ...
+    ]
 
     故事：
     {story}
@@ -124,11 +132,16 @@ if st.button("生成繪本"):
         style_base = generate_style_base(story)
         st.write("風格基礎：", style_base)
 
-    pages = eval(paged_story)  # 將字符串轉換為Python對象
-    for i, (text, image_prompt) in enumerate(pages, 1):
+    try:
+        pages = json.loads(paged_story)
+    except json.JSONDecodeError:
+        st.error("無法解析分頁故事。請重試。")
+        st.stop()
+
+    for i, page in enumerate(pages, 1):
         st.write(f"第 {i} 頁")
-        st.write("文字：", text)
+        st.write("文字：", page['text'])
         with st.spinner(f"正在生成第 {i} 頁的圖片..."):
-            image_url = generate_image(image_prompt, style_base)
+            image_url = generate_image(page['image_prompt'], style_base)
             st.image(image_url, caption=f"第 {i} 頁的插圖")
         time.sleep(5)  # 添加延遲以避免API限制
