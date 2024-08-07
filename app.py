@@ -113,9 +113,9 @@ def generate_image(image_prompt, style_base):
     Set a random seed value of 42. Ensure no text appears in the image.
     """
     response = client.images.generate(
-        model="dall-e-3",
+        model="gpt-4o-mini",
         prompt=final_prompt,
-        size="1792x1024",
+        size="800x600",
         n=1
     )
     return response.data[0].url
