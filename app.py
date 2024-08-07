@@ -35,24 +35,45 @@ page_count = st.slider("選擇繪本頁數:", min_value=6, max_value=12, value=8
 
 
 def generate_plot_points(character, theme):
-    prompt = f"為一個關於{character}的{theme}故事生成3到5個可能的故事轉折重點。每個重點應該簡短而有趣。請直接列出轉折重點，不要加入額外的說明。"
+    prompt = f"""為一個關於{character}的{theme}故事生成3到5個可能的故事轉折重點。
+    每個重點應該簡短而有趣。
+    請直接列出轉折重點，每個轉折點佔一行，不要加入額外的說明或編號。
+    例如：
+    主角遇到一個神秘的陌生人
+    意外發現一個魔法物品
+    朋友陷入危險需要救援
+    """
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
     )
     plot_points = response.choices[0].message.content.split('\n')
-    return [point.strip() for point in plot_points if point.strip() and not point.startswith("1") and not point.startswith("2") and not point.startswith("3") and not point.startswith("4") and not point.startswith("5")]
+    # 移除空行和可能的前導/尾隨空白
+    plot_points = [point.strip() for point in plot_points if point.strip()]
+    
+    # 調試輸出
+    st.write("生成的原始轉折重點：")
+    st.write(response.choices[0].message.content)
+    st.write("處理後的轉折重點列表：")
+    st.write(plot_points)
+    
+    return plot_points
 
 # 生成並選擇故事轉折重點
 if st.button("生成故事轉折重點選項"):
     plot_points = generate_plot_points(character, theme)
-    st.session_state.plot_points = plot_points
+    if plot_points:
+        st.session_state.plot_points = plot_points
+    else:
+        st.error("未能生成有效的轉折重點。請重試。")
 
 if 'plot_points' in st.session_state:
-    plot_point = st.selectbox("選擇或輸入繪本故事轉折重點:", st.session_state.plot_points + ["其他"])
+    plot_point = st.selectbox("選擇或輸入繪本故事轉折重點:", 
+                              ["請選擇"] + st.session_state.plot_points + ["其他"])
     if plot_point == "其他":
         plot_point = st.text_input("請輸入自定義故事轉折重點:")
-
+    elif plot_point == "請選擇":
+        st.warning("請選擇一個轉折重點或輸入自定義轉折重點。")
 
 # 生成故事函數
 def generate_story(character, theme, plot_point, page_count):
@@ -115,7 +136,7 @@ def generate_image(image_prompt, style_base):
     Set a random seed value of 42. Ensure no text appears in the image.
     """
     response = client.images.generate(
-        model="gpt-4o-mini",
+        model="dall-e-3",
         prompt=final_prompt,
         size="512x512",
         n=1
