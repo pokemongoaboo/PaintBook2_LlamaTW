@@ -33,14 +33,15 @@ if theme == "其他":
 # 選擇頁數
 page_count = st.slider("選擇繪本頁數:", min_value=6, max_value=12, value=8)
 
+
 def generate_plot_points(character, theme):
-    prompt = f"為一個關於{character}的{theme}故事生成3到5個可能的故事轉折重點。每個重點應該簡短而有趣。"
+    prompt = f"為一個關於{character}的{theme}故事生成3到5個可能的故事轉折重點。每個重點應該簡短而有趣。請直接列出轉折重點，不要加入額外的說明。"
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
     )
     plot_points = response.choices[0].message.content.split('\n')
-    return [point.strip() for point in plot_points if point.strip()]
+    return [point.strip() for point in plot_points if point.strip() and not point.startswith("1") and not point.startswith("2") and not point.startswith("3") and not point.startswith("4") and not point.startswith("5")]
 
 # 生成並選擇故事轉折重點
 if st.button("生成故事轉折重點選項"):
@@ -51,6 +52,7 @@ if 'plot_points' in st.session_state:
     plot_point = st.selectbox("選擇或輸入繪本故事轉折重點:", st.session_state.plot_points + ["其他"])
     if plot_point == "其他":
         plot_point = st.text_input("請輸入自定義故事轉折重點:")
+
 
 # 生成故事函數
 def generate_story(character, theme, plot_point, page_count):
@@ -115,7 +117,7 @@ def generate_image(image_prompt, style_base):
     response = client.images.generate(
         model="gpt-4o-mini",
         prompt=final_prompt,
-        size="800x600",
+        size="512x512",
         n=1
     )
     return response.data[0].url
