@@ -1,10 +1,10 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 import time
 import random
 
-# 設置OpenAI API密鑰
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+# 設置OpenAI客戶端
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # 主角選項
 characters = ["貓咪", "狗狗", "花花", "小鳥", "小石頭"]
@@ -31,8 +31,8 @@ page_count = st.slider("選擇繪本頁數:", min_value=6, max_value=12, value=8
 
 def generate_plot_points(character, theme):
     prompt = f"為一個關於{character}的{theme}故事生成3到5個可能的故事轉折重點。每個重點應該簡短而有趣。"
-    response = openai.ChatCompletion.create(
-        model="gpt-4o-mini",  # 更新為正確的模型名稱
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
     )
     plot_points = response.choices[0].message.content.split('\n')
@@ -58,8 +58,8 @@ def generate_story(character, theme, plot_point, page_count):
     並注意在倒數第三頁加入{plot_point}的元素，
     最後的故事需要是溫馨、快樂的結局。
     """
-    response = openai.ChatCompletion.create(
-        model="gpt-4o-mini",  # 更新為正確的模型名稱
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content
@@ -74,8 +74,8 @@ def generate_paged_story(story, page_count, character, theme, plot_point):
     故事：
     {story}
     """
-    response = openai.ChatCompletion.create(
-        model="gpt-4o-mini",  # 更新為正確的模型名稱
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content
@@ -87,8 +87,8 @@ def generate_style_base(story):
 
     {story}
     """
-    response = openai.ChatCompletion.create(
-        model="gpt-4o-mini",  # 更新為正確的模型名稱
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content
@@ -102,13 +102,13 @@ def generate_image(image_prompt, style_base):
     Include at least 3 effect words (lighting effects, color tones, rendering effects, visual styles) and 1 or more composition techniques.
     Set a random seed value of 42. Ensure no text appears in the image.
     """
-    response = openai.Image.create(
+    response = client.images.generate(
         model="dall-e-3",
         prompt=final_prompt,
         size="1792x1024",
         n=1
     )
-    return response['data'][0]['url']
+    return response.data[0].url
 
 # 主要生成流程
 if st.button("生成繪本"):
