@@ -4,6 +4,8 @@ import time
 import random
 import json
 import ast
+import re
+
 
 # 設置OpenAI客戶端
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -137,19 +139,19 @@ def preprocess_json(json_string):
 
 # 主要生成流程
 if st.button("生成繪本"):
-    with st.spinner("正在生成故事..."):
-        story = generate_story(character, theme, plot_point, page_count)
-        st.write("故事大綱：", story)
-
-    with st.spinner("正在分頁故事..."):
-        paged_story = generate_paged_story(story, page_count, character, theme, plot_point)
-        st.write("分頁故事：", paged_story)
-
-    with st.spinner("正在生成風格基礎..."):
-        style_base = generate_style_base(story)
-        st.write("風格基礎：", style_base)
-
     try:
+        with st.spinner("正在生成故事..."):
+            story = generate_story(character, theme, plot_point, page_count)
+            st.write("故事大綱：", story)
+
+        with st.spinner("正在分頁故事..."):
+            paged_story = generate_paged_story(story, page_count, character, theme, plot_point)
+            st.write("分頁故事（原始）：", paged_story)
+
+        with st.spinner("正在生成風格基礎..."):
+            style_base = generate_style_base(story)
+            st.write("風格基礎：", style_base)
+
         # 預處理 JSON 字符串
         processed_paged_story = preprocess_json(paged_story)
         
@@ -162,28 +164,30 @@ if st.button("生成繪本"):
             raise ValueError("解析後的結果不是列表")
         
         st.success(f"成功解析 JSON。共有 {len(pages)} 頁。")
+
+        for i, page in enumerate(pages, 1):
+            st.write(f"第 {i} 頁")
+            st.write("文字：", page.get('text', '無文字'))
+            with st.spinner(f"正在生成第 {i} 頁的圖片..."):
+                image_prompt = page.get('image_prompt', '')
+                if image_prompt:
+                    image_url = generate_image(image_prompt, style_base)
+                    st.image(image_url, caption=f"第 {i} 頁的插圖")
+                else:
+                    st.warning(f"第 {i} 頁沒有圖像提示")
+            time.sleep(5)  # 添加延遲以避免API限制
+
     except json.JSONDecodeError as e:
         st.error(f"JSON 解析錯誤：{str(e)}")
         st.text("處理後的 JSON 字符串：")
         st.code(processed_paged_story)
-        st.stop()
     except ValueError as e:
         st.error(f"值錯誤：{str(e)}")
         st.text("解析後的數據：")
         st.write(pages)
-        st.stop()
     except Exception as e:
         st.error(f"發生未知錯誤：{str(e)}")
-        st.stop()
-
-    for i, page in enumerate(pages, 1):
-        st.write(f"第 {i} 頁")
-        st.write("文字：", page.get('text', '無文字'))
-        with st.spinner(f"正在生成第 {i} 頁的圖片..."):
-            image_prompt = page.get('image_prompt', '')
-            if image_prompt:
-                image_url = generate_image(image_prompt, style_base)
-                st.image(image_url, caption=f"第 {i} 頁的插圖")
-            else:
-                st.warning(f"第 {i} 頁沒有圖像提示")
-        time.sleep(5)  # 添加延遲以避免API限制
+        st.text("錯誤詳情：")
+        st.exception(e)
+    finally:
+        st.write("生成過程完成。如果有任何錯誤，請檢查上面的錯誤信息。")
