@@ -119,6 +119,22 @@ def generate_image(image_prompt, style_base):
     return response.data[0].url
 
 
+def preprocess_json(json_string):
+    # 移除可能的 Markdown 代碼塊標記
+    json_string = re.sub(r'```json\s*', '', json_string)
+    json_string = re.sub(r'\s*```', '', json_string)
+    
+    # 移除開頭和結尾的空白字符
+    json_string = json_string.strip()
+    
+    # 確保 JSON 字符串以 [ 開始並以 ] 結束
+    if not json_string.startswith('['):
+        json_string = '[' + json_string
+    if not json_string.endswith(']'):
+        json_string = json_string + ']'
+    
+    return json_string
+
 # 主要生成流程
 if st.button("生成繪本"):
     with st.spinner("正在生成故事..."):
@@ -134,15 +150,13 @@ if st.button("生成繪本"):
         st.write("風格基礎：", style_base)
 
     try:
-        # 嘗試移除可能的前導和尾隨空白字符
-        paged_story = paged_story.strip()
+        # 預處理 JSON 字符串
+        processed_paged_story = preprocess_json(paged_story)
         
-        # 檢查是否以 [ 開始和 ] 結束
-        if not (paged_story.startswith('[') and paged_story.endswith(']')):
-            st.warning("JSON 格式可能不正確。正在嘗試修復...")
-            paged_story = '[' + paged_story + ']'
+        st.write("處理後的 JSON 字符串：")
+        st.code(processed_paged_story)
         
-        pages = json.loads(paged_story)
+        pages = json.loads(processed_paged_story)
         
         if not isinstance(pages, list):
             raise ValueError("解析後的結果不是列表")
@@ -150,8 +164,8 @@ if st.button("生成繪本"):
         st.success(f"成功解析 JSON。共有 {len(pages)} 頁。")
     except json.JSONDecodeError as e:
         st.error(f"JSON 解析錯誤：{str(e)}")
-        st.text("原始 JSON 字符串：")
-        st.code(paged_story)
+        st.text("處理後的 JSON 字符串：")
+        st.code(processed_paged_story)
         st.stop()
     except ValueError as e:
         st.error(f"值錯誤：{str(e)}")
