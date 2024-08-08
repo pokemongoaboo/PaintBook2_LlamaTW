@@ -52,10 +52,10 @@ def generate_plot_points(character, theme):
     plot_points = [point.strip() for point in plot_points if point.strip()]
     
     # 調試輸出
-    st.write("生成的原始轉折重點：")
-    st.write(response.choices[0].message.content)
-    st.write("處理後的轉折重點列表：")
-    st.write(plot_points)
+    #st.write("生成的原始轉折重點：")
+    #st.write(response.choices[0].message.content)
+    #st.write("處理後的轉折重點列表：")
+    #st.write(plot_points)
     
     return plot_points
 
@@ -169,11 +169,11 @@ if st.button("生成繪本"):
 
         with st.spinner("正在分頁故事..."):
             paged_story = generate_paged_story(story, page_count, character, theme, plot_point)
-            st.write("分頁故事（原始）：", paged_story)
+            #st.write("分頁故事（原始）：", paged_story)
 
         with st.spinner("正在生成風格基礎..."):
             style_base = generate_style_base(story)
-            st.write("風格基礎：", style_base)
+            #st.write("風格基礎：", style_base)
 
         # 預處理 JSON 字符串
         processed_paged_story = preprocess_json(paged_story)
