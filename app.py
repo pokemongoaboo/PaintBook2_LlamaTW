@@ -8,7 +8,10 @@ import re
 
 
 # 設置OpenAI客戶端
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+client = OpenAI(
+    base_url = "https://integrate.api.nvidia.com/v1",
+    api_key=st.secrets["OPENAI_API_KEY"]
+)
 
 # 主角選項
 characters = ["貓咪", "狗狗", "花花", "小鳥", "小石頭"]
@@ -44,7 +47,7 @@ def generate_plot_points(character, theme):
     朋友陷入危險需要救援
     """
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="yentinglin/llama-3-taiwan-70b-instruct",
         messages=[{"role": "user", "content": prompt}]
     )
     plot_points = response.choices[0].message.content.split('\n')
@@ -86,7 +89,7 @@ def generate_story(character, theme, plot_point, page_count):
     最後的故事需要是溫馨、快樂的結局。
     """
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="yentinglin/llama-3-taiwan-70b-instruct",
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content
@@ -108,7 +111,7 @@ def generate_paged_story(story, page_count, character, theme, plot_point):
     {story}
     """
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="yentinglin/llama-3-taiwan-70b-instruct",
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content
@@ -121,7 +124,7 @@ def generate_style_base(story):
     {story}
     """
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="yentinglin/llama-3-taiwan-70b-instruct",
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content
